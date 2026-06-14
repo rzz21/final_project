@@ -1,0 +1,5 @@
+- dataset.gen_subset=test
+- common_eval.path=/home/zhizhen/course_project/exp/exp_v2t/checkpoints/checkpoint_best.pt
+- common_eval.results_path=/home/zhizhen/course_project/exp/eval_v2t
+- override.modalities=['video']
+- common.user_dir=/home/zhizhen/course_project

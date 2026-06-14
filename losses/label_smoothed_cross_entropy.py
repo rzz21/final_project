@@ -48,7 +48,17 @@ def label_smoothed_nll_loss(lprobs, target, epsilon, ignore_index=None, reduce=T
     ################################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    nll_loss = -lprobs.gather(dim=-1, index=target.unsqueeze(-1)).squeeze(-1)
+    smooth_loss = -lprobs.sum(dim=-1)
+    eps_i = epsilon / (lprobs.size(-1) - 1)
+    loss = (1 - epsilon) * nll_loss + eps_i * smooth_loss
+    if ignore_index is not None:
+        pad_mask = target.eq(ignore_index)
+        loss = loss.masked_fill(pad_mask, 0.0)
+        nll_loss = nll_loss.masked_fill(pad_mask, 0.0)
+    if reduce:
+        loss = loss.sum()
+        nll_loss = nll_loss.sum()
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ################################################################################
@@ -129,7 +139,23 @@ class LabelSmoothedCrossEntropyCriterion(_Loss):
         ################################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        loss, nll_loss = label_smoothed_nll_loss(
+            lprobs, target, self.eps, ignore_index=self.padding_idx, reduce=False
+        )
+        non_pad_mask = target.ne(self.padding_idx)
+        if self.focal_gamma > 0:
+            p_t = torch.exp(-nll_loss)
+            focal_weight = (1 - p_t) ** self.focal_gamma
+            loss = loss * focal_weight
+            nll_loss = nll_loss * focal_weight
+        if self.confidence_penalty > 0:
+            # p * log(p) = exp(lprobs) * lprobs
+            probs = torch.exp(lprobs)
+            entropy = torch.sum(probs * lprobs, dim=-1)
+            loss = loss + self.confidence_penalty * entropy * non_pad_mask.float()
+        if reduce:
+            loss = loss.sum()
+            nll_loss = nll_loss.sum()
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ################################################################################

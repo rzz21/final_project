@@ -457,7 +457,32 @@ class EncoderBackbone(BaseFairseqModel):
         ################################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        # B, C, T = features_audio.shape
+        # mask = torch.rand(B, device=features_audio.device) < self.modality_dropout
+        # mode = getattr(self, 'modality_dropout_mode', 'sample')
+
+        # if mode == 'span':
+        #     span_min = self.modality_dropout_span_min
+        #     span_max = self.modality_dropout_span_max
+        #     span_max = min(span_max, T)
+        #     if span_max > span_min:
+        #         for i in range(B):
+        #             if not mask[i]:
+        #                 continue
+        #             span_len = torch.randint(span_min, span_max + 1, (1,)).item()
+        #             start = torch.randint(0, T - span_len + 1, (1,)).item()
+        #             if torch.rand(1).item() < self.audio_dropout:
+        #                 features_audio[i, :, start:start + span_len] = 0
+        #             else:
+        #                 features_video[i, :, start:start + span_len] = 0
+        # else:  # 'sample' mode
+        #     for i in range(B):
+        #         if not mask[i]:
+        #             continue
+        #         if torch.rand(1).item() < self.audio_dropout:
+        #             features_audio[i] = 0
+        #         else:
+        #             features_video[i] = 0
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ################################################################################
@@ -557,7 +582,37 @@ class EncoderBackbone(BaseFairseqModel):
         ################################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        # B, T, C = features.shape
+
+        # if self.mask_prob > 0:
+        #     mask_indices, _, _, _ = compute_mask_indices(
+        #         (B, T),
+        #         padding_mask,
+        #         self.mask_prob,
+        #         self.mask_length,
+        #         self.mask_selection,
+        #         self.mask_other,
+        #         min_masks=2,
+        #         no_overlap=self.no_mask_overlap,
+        #         min_space=0,
+        #     )
+        #     mask_indices = torch.from_numpy(mask_indices).to(features.device)
+        #     features = features.masked_fill(mask_indices.unsqueeze(-1), 0.0)
+
+        # if self.mask_channel_prob > 0:
+        #     mask_channel_indices, _, _, _ = compute_mask_indices(
+        #         (B, C),
+        #         None,
+        #         self.mask_channel_prob,
+        #         self.mask_channel_length,
+        #         self.mask_channel_selection,
+        #         self.mask_channel_other,
+        #         no_overlap=self.no_mask_channel_overlap,
+        #         min_space=0,
+        #     )
+        #     mask_channel_indices = torch.from_numpy(mask_channel_indices).to(features.device)
+        #     mask_channel_indices = mask_channel_indices.unsqueeze(1).expand(-1, T, -1)
+        #     features = features.masked_fill(mask_channel_indices, 0.0)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ################################################################################

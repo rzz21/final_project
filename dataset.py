@@ -206,7 +206,12 @@ class AudioVideoDataset(FairseqDataset):
         ################################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        start, end = self.label_offsets_list[index]
+        with open(self.label_path, 'rb') as f:
+            f.seek(start)
+            label_str = f.read(end - start).decode('utf-8').rstrip()
+        subwords = self.bpe_tokenizer.encode(label_str)
+        label = torch.LongTensor([self.dictionary.index(w) for w in subwords])
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ################################################################################
@@ -247,7 +252,10 @@ class AudioVideoDataset(FairseqDataset):
         ################################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        video_path = os.path.join(self.audio_root, video_name)
+        frames = utils.load_video(video_path)
+        feats = self.transform(frames)
+        feats = np.expand_dims(feats, axis=-1)  # [T, H, W] -> [T, H, W, 1]
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ################################################################################
@@ -268,7 +276,17 @@ class AudioVideoDataset(FairseqDataset):
         ################################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        # 1. Convert to cupy array and extract logfbank features on GPU
+        cupy_data = cupy.asarray(wav_data.astype(cupy.float32))
+        audio_feats, _ = logfbank(cupy_data)  # cupy array [T, F]
+        audio_feats = audio_feats.get()  # back to numpy [T, F]
+
+        # 2. Stack every stack_order_audio consecutive frames, pad with zeros if needed
+        T, F = audio_feats.shape
+        pad = (self.stack_order_audio - T % self.stack_order_audio) % self.stack_order_audio
+        if pad > 0:
+            audio_feats = np.pad(audio_feats, ((0, pad), (0, 0)), mode='constant')
+        audio_feats = audio_feats.reshape(-1, F * self.stack_order_audio)  # [T_out, C]
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ################################################################################

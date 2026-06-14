@@ -47,7 +47,14 @@ class BasicBlock(nn.Module):
         ################################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        self.conv1 = conv3x3(inplanes, planes, stride)
+        self.bn1 = nn.BatchNorm2d(planes)
+        self.relu1 = nn.PReLU(num_parameters=planes)
+        self.conv2 = conv3x3(planes, planes)
+        self.bn2 = nn.BatchNorm2d(planes)
+        self.relu2 = nn.PReLU(num_parameters=planes)
+        if stride != 1 or inplanes != planes * self.expansion:
+            self.downsample = downsample
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ################################################################################
@@ -62,7 +69,16 @@ class BasicBlock(nn.Module):
         ################################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        residual = x
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu1(out)
+        out = self.conv2(out)
+        out = self.bn2(out)
+        if self.downsample is not None:
+            residual = self.downsample(x)
+        out += residual
+        out = self.relu2(out)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ################################################################################
@@ -111,7 +127,13 @@ class ResNet(nn.Module):
         ################################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        downsample = None
+        if stride != 1 or self.inplanes != planes * block.expansion:
+            downsample = self.downsample_block(self.inplanes, planes * block.expansion, stride)
+        layers.append(block(self.inplanes, planes, stride, downsample))
+        self.inplanes = planes * block.expansion
+        for _ in range(1, blocks):
+            layers.append(block(self.inplanes, planes))
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ################################################################################
@@ -186,7 +208,7 @@ class AudioEncoder(nn.Module):
         ################################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        self.proj = nn.Linear(input_dim, output_dim)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ################################################################################
@@ -200,7 +222,10 @@ class AudioEncoder(nn.Module):
         ################################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        # x: [B, F, T]
+        x = x.transpose(1, 2)  # [B, T, F]
+        x = self.proj(x)       # [B, T, C]
+        x = x.transpose(1, 2)  # [B, C, T]
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ################################################################################
