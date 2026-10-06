@@ -211,7 +211,12 @@ class AudioVideoDataset(FairseqDataset):
             f.seek(start)
             label_str = f.read(end - start).decode('utf-8').rstrip()
         subwords = self.bpe_tokenizer.encode(label_str)
-        label = torch.LongTensor([self.dictionary.index(w) for w in subwords])
+        label = self.dictionary.encode_line(
+                subwords,
+                line_tokenizer=lambda x: x.split(),
+                add_if_not_exist=False,
+                append_eos=True,
+                ).long()
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ################################################################################
@@ -279,7 +284,7 @@ class AudioVideoDataset(FairseqDataset):
         # 1. Convert to cupy array and extract logfbank features on GPU
         cupy_data = cupy.asarray(wav_data.astype(cupy.float32))
         audio_feats, _ = logfbank(cupy_data)  # cupy array [T, F]
-        audio_feats = audio_feats.get()  # back to numpy [T, F]
+        audio_feats = cupy.asnumpy(audio_feats)  # back to numpy [T, F]
 
         # 2. Stack every stack_order_audio consecutive frames, pad with zeros if needed
         T, F = audio_feats.shape

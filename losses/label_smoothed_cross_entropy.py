@@ -50,7 +50,7 @@ def label_smoothed_nll_loss(lprobs, target, epsilon, ignore_index=None, reduce=T
 
     nll_loss = -lprobs.gather(dim=-1, index=target.unsqueeze(-1)).squeeze(-1)
     smooth_loss = -lprobs.sum(dim=-1)
-    eps_i = epsilon / (lprobs.size(-1) - 1)
+    eps_i = epsilon / lprobs.size(-1)
     loss = (1 - epsilon) * nll_loss + eps_i * smooth_loss
     if ignore_index is not None:
         pad_mask = target.eq(ignore_index)
